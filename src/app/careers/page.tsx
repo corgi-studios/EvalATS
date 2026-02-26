@@ -1,172 +1,155 @@
-import { Briefcase, Building2, Clock, Heart, MapPin, Search, TrendingUp, Users } from 'lucide-react'
-import type { Metadata } from 'next'
-import Link from 'next/link'
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Careers at EvalATS - Join Our Team',
-  description:
-    'Explore exciting career opportunities at EvalATS. We are always looking for talented individuals to join our growing team.',
-  openGraph: {
-    title: 'Careers at EvalATS',
-    description: 'Join our team and help us build the future of hiring',
-    type: 'website',
-  },
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import {
+  Briefcase,
+  Building2,
+  Clock,
+  Heart,
+  MapPin,
+  Search,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+
+function formatSalaryRange(salaryMin?: number | null, salaryMax?: number | null) {
+  const min = typeof salaryMin === "number" ? salaryMin : null;
+  const max = typeof salaryMax === "number" ? salaryMax : null;
+
+  if (min == null && max == null) return null;
+
+  const fmt = (n: number) => `$${n.toLocaleString()}`;
+
+  if (min != null && max != null) return `${fmt(min)} - ${fmt(max)}`;
+  if (min != null) return `${fmt(min)}+`;
+  return `Up to ${fmt(max!)}`;
 }
 
-// This would come from Convex in a real implementation
-const jobs = [
-  {
-    id: '1',
-    title: 'Senior Software Engineer',
-    department: 'Engineering',
-    location: 'San Francisco, CA',
-    type: 'Full-time',
-    experience: '5+ years',
-    salary: '$150k - $200k',
-    description: 'We are looking for a talented Senior Software Engineer to join our team...',
-    posted: '2 days ago',
-    urgency: 'high',
-  },
-  {
-    id: '2',
-    title: 'Product Designer',
-    department: 'Design',
-    location: 'Remote',
-    type: 'Full-time',
-    experience: '3+ years',
-    salary: '$120k - $160k',
-    description: 'Join our design team to create beautiful and intuitive user experiences...',
-    posted: '1 week ago',
-    urgency: 'medium',
-  },
-  {
-    id: '3',
-    title: 'Marketing Manager',
-    department: 'Marketing',
-    location: 'New York, NY',
-    type: 'Full-time',
-    experience: '4+ years',
-    salary: '$100k - $140k',
-    description: 'Lead our marketing efforts and help us grow our brand presence...',
-    posted: '3 days ago',
-    urgency: 'medium',
-  },
-  {
-    id: '4',
-    title: 'Data Analyst',
-    department: 'Analytics',
-    location: 'Austin, TX',
-    type: 'Full-time',
-    experience: '2+ years',
-    salary: '$80k - $110k',
-    description: 'Help us make data-driven decisions and improve our product...',
-    posted: '5 days ago',
-    urgency: 'low',
-  },
-]
-
-const departments = ['All', 'Engineering', 'Design', 'Marketing', 'Analytics', 'Sales', 'HR']
-const locations = ['All Locations', 'San Francisco, CA', 'New York, NY', 'Austin, TX', 'Remote']
-const types = ['All Types', 'Full-time', 'Part-time', 'Contract', 'Internship']
-
 export default function CareersPage() {
+  const jobs = useQuery(api.jobs.listPublic);
+
+  // Local UI state for filtering
+  const [search, setSearch] = useState("");
+  const [department, setDepartment] = useState("All");
+  const [location, setLocation] = useState("All Locations");
+  const [type, setType] = useState("All Types");
+
+  const allJobs = jobs ?? [];
+
+  // Build dropdown options from real data
+  const departments = useMemo(() => {
+    const uniq = Array.from(
+      new Set(allJobs.map((j) => j.department).filter(Boolean))
+    ).sort();
+    return ["All", ...uniq];
+  }, [allJobs]);
+
+  const locations = useMemo(() => {
+    const uniq = Array.from(
+      new Set(allJobs.map((j) => j.location).filter(Boolean))
+    ).sort();
+    return ["All Locations", ...uniq];
+  }, [allJobs]);
+
+  const types = useMemo(() => {
+    const uniq = Array.from(
+      new Set(allJobs.map((j) => j.type).filter(Boolean))
+    ).sort();
+    return ["All Types", ...uniq];
+  }, [allJobs]);
+
+  const filteredJobs = useMemo(() => {
+    const s = search.trim().toLowerCase();
+
+    return allJobs.filter((job) => {
+      const matchesSearch =
+        !s ||
+        job.title.toLowerCase().includes(s) ||
+        job.department.toLowerCase().includes(s) ||
+        job.location.toLowerCase().includes(s);
+
+      const matchesDept = department === "All" || job.department === department;
+      const matchesLoc =
+        location === "All Locations" || job.location === location;
+      const matchesType = type === "All Types" || job.type === type;
+
+      return matchesSearch && matchesDept && matchesLoc && matchesType;
+    });
+  }, [allJobs, search, department, location, type]);
+
+  // Loading state
+  if (jobs === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        Loading openings…
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-purple-700 text-white">
-        <div className="absolute inset-0 bg-grid-white/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+      <section className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
           <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              Join Our Team at EvalATS
-            </h1>
-            <p className="text-xl sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
-              Help us revolutionize the hiring process. We're looking for passionate individuals who
-              want to make a difference.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="#openings"
-                className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 md:py-4 md:text-lg md:px-10 transition-colors"
-              >
-                View Open Positions
-              </a>
-              <a
-                href="#culture"
-                className="inline-flex items-center justify-center px-8 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white/10 md:py-4 md:text-lg md:px-10 transition-colors"
-              >
-                Learn About Our Culture
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 bg-white dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">50+</div>
-              <div className="text-gray-600 dark:text-gray-400 mt-2">Team Members</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">15+</div>
-              <div className="text-gray-600 dark:text-gray-400 mt-2">Open Positions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">4.8</div>
-              <div className="text-gray-600 dark:text-gray-400 mt-2">Glassdoor Rating</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">100%</div>
-              <div className="text-gray-600 dark:text-gray-400 mt-2">Remote Friendly</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Job Listings Section */}
-      <section id="openings" className="py-16 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
               Open Positions
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            </h1>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Find your next career opportunity with us
             </p>
           </div>
 
-          {/* Filters */}
-          <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search & Filters */}
+          <div className="mt-10 bg-white/70 dark:bg-gray-800/70 backdrop-blur rounded-xl p-4 sm:p-6 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                   type="text"
                   placeholder="Search positions..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
-              <select className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+
+              <select
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
                   </option>
                 ))}
               </select>
-              <select className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
                 {locations.map((loc) => (
                   <option key={loc} value={loc}>
                     {loc}
                   </option>
                 ))}
               </select>
-              <select className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
-                {types.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
+                {types.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
                   </option>
                 ))}
               </select>
@@ -174,142 +157,136 @@ export default function CareersPage() {
           </div>
 
           {/* Job Cards */}
-          <div className="space-y-4">
-            {jobs.map((job) => (
-              <Link
-                key={job.id}
-                href={`/careers/${job.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                          {job.title}
-                        </h3>
-                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <Building2 className="h-4 w-4" />
-                            {job.department}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {job.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Briefcase className="h-4 w-4" />
-                            {job.type}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {job.posted}
-                          </span>
+          <div className="mt-8 space-y-4">
+            {filteredJobs.length === 0 ? (
+              <div className="text-center text-gray-600 dark:text-gray-300 py-10">
+                No matching positions found.
+              </div>
+            ) : (
+              filteredJobs.map((job) => {
+                const salary = formatSalaryRange(job.salaryMin, job.salaryMax);
+                return (
+                  <Link
+                    key={job._id}
+                    href={`/careers/${job._id}`}
+                    className="block bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                              {job.title}
+                            </h3>
+
+                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-4 w-4" />
+                                {job.department}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4" />
+                                {job.location}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Briefcase className="h-4 w-4" />
+                                {job.type}
+                              </span>
+                              {job.postedDate && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  Posted {job.postedDate}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {job.urgency === "high" && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                              Urgent
+                            </span>
+                          )}
                         </div>
+
+                        <p className="mt-3 text-gray-600 dark:text-gray-400 line-clamp-2">
+                          {job.description}
+                        </p>
+
+                        {salary && (
+                          <div className="flex items-center gap-4 mt-4">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {salary}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      {job.urgency === 'high' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                          Urgent
+
+                      <div className="mt-4 sm:mt-0 sm:ml-6">
+                        <span className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                          Apply Now
                         </span>
-                      )}
+                      </div>
                     </div>
-                    <p className="mt-3 text-gray-600 dark:text-gray-400 line-clamp-2">
-                      {job.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-4">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {job.salary}
-                      </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {job.experience} experience
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-4 sm:mt-0 sm:ml-6">
-                    <span className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                      Apply Now
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                  </Link>
+                );
+              })
+            )}
           </div>
         </div>
       </section>
 
-      {/* Culture Section */}
-      <section id="culture" className="py-16 bg-white dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Why Work With Us
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              We offer more than just a job - we offer a career
+      {/* The rest of your sections can stay as-is */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                Team Members
+              </h3>
+            </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Build with a small, dedicated team.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full mb-4">
-                <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Great Team
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                Growth
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Work with talented and passionate people who love what they do
-              </p>
             </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
-                <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Growth</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Continuous learning opportunities and career development
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full mb-4">
-                <Heart className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Benefits</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Competitive salary, health insurance, and flexible work arrangements
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full mb-4">
-                <Building2 className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Remote First
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Learn fast and own meaningful work.
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Heart className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                Culture
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Work from anywhere with flexible hours and async communication
-              </p>
             </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Respectful, remote-friendly collaboration.
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Briefcase className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                Open Roles
+              </h3>
+            </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Join us when there’s a match.
+            </p>
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Don't see the right position?</h2>
-          <p className="text-xl mb-8 text-blue-100">
-            We're always looking for talented people. Send us your resume and we'll keep you in mind
-            for future opportunities.
-          </p>
-          <a
-            href="mailto:careers@evalats.com"
-            className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 md:py-4 md:text-lg md:px-10 transition-colors"
-          >
-            Send Your Resume
-          </a>
-        </div>
-      </section>
     </div>
-  )
+  );
 }
