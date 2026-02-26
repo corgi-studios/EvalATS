@@ -19,7 +19,7 @@ const _statusColors = {
 
 export default function CandidatesPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'applied' | 'screening' | 'interview' | 'offer' | 'rejected' | 'withdrawn'>('all')
 
   // Fetch candidates from Convex
   const candidates =
@@ -65,7 +65,7 @@ export default function CandidatesPage() {
 
               <select
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                onChange={(e) => setSelectedStatus(e.target.value as 'all' | 'applied' | 'screening' | 'interview' | 'offer' | 'rejected' | 'withdrawn')}
                 className="input-clean h-10 text-sm px-3"
               >
                 <option value="all">All Status</option>

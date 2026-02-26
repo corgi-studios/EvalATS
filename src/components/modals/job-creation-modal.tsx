@@ -129,6 +129,7 @@ export function JobCreationModal({ isOpen, onClose }: JobCreationModalProps) {
         salaryMax,
         description: formData.description.trim(),
         requirements,
+        isPublic: true, // Jobs are public by default
         // status is set to 'active' by default in the mutation handler
       })
 

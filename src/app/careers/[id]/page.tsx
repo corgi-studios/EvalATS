@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
+import { useState } from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
+import { ApplicationForm } from "@/components/application-form";
 
 function formatSalaryRange(salaryMin?: number | null, salaryMax?: number | null) {
   const min = typeof salaryMin === "number" ? salaryMin : null;
@@ -20,6 +22,7 @@ function formatSalaryRange(salaryMin?: number | null, salaryMax?: number | null)
 
 export default function CareerJobPage() {
   const params = useParams();
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
 
   // Convex Ids are strings at runtime; cast to Id<"jobs"> for type safety
   const id = params?.id as string;
@@ -110,15 +113,34 @@ export default function CareerJobPage() {
 
         <div className="mt-10 border border-gray-200 dark:border-gray-700 rounded-lg p-5">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Apply
+            Apply Now
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-            Application form goes here. Next step: wire this to an application submission mutation.
-          </p>
 
-          <button className="mt-4 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-            Start Application
-          </button>
+          {!showApplicationForm ? (
+            <>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                Fill out your information below to submit your application.
+              </p>
+
+              <button
+                onClick={() => setShowApplicationForm(true)}
+                className="mt-4 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                Start Application
+              </button>
+            </>
+          ) : (
+            <div className="mt-4">
+              <ApplicationForm
+                jobId={jobId}
+                jobTitle={job.title}
+                onSuccess={() => {
+                  setShowApplicationForm(false);
+                }}
+                onCancel={() => setShowApplicationForm(false)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
