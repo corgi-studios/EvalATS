@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 const isPublicRoute = createRouteMatcher([
   "/careers(.*)",
   "/api/public(.*)",
+  "/api/debug-claims(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
 ]);
@@ -27,11 +28,32 @@ export default clerkMiddleware(async (auth, req) => {
   await auth.protect();
 
   // Read user + claims using auth()
-  const { sessionClaims } = await auth();
+  const { sessionClaims, userId } = await auth();
 
   if (isAdminRoute(req)) {
-    // The role should be in the JWT claims if configured in Clerk JWT template
-    const role = (sessionClaims as any)?.role;
+    // Try to get role from JWT claims first
+    let role = (sessionClaims as any)?.role;
+
+    // If role not in JWT claims, try to fetch from Clerk API
+    // This is a fallback in case the JWT template hasn't propagated yet
+    if (!role && userId) {
+      try {
+        const response = await fetch(
+          `https://api.clerk.com/v1/users/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const user = await response.json();
+          role = user.public_metadata?.role;
+        }
+      } catch (error) {
+        console.error('Failed to fetch user role from Clerk:', error);
+      }
+    }
 
     if (role !== "admin" && role !== "recruiter") {
       return NextResponse.redirect(new URL("/careers", req.url));
