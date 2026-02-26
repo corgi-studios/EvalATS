@@ -30,7 +30,8 @@ export default clerkMiddleware(async (auth, req) => {
   const { sessionClaims } = await auth();
 
   if (isAdminRoute(req)) {
-    const role = (sessionClaims?.publicMetadata as any)?.role;
+    // The role should be in the JWT claims if configured in Clerk JWT template
+    const role = (sessionClaims as any)?.role;
 
     if (role !== "admin" && role !== "recruiter") {
       return NextResponse.redirect(new URL("/careers", req.url));
