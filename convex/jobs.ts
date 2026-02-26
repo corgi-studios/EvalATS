@@ -100,6 +100,17 @@ export const getPublicById = query({
   },
 });
 
+/** Basic slugify helper */
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
 /**
  * Admin: create new job
  */
@@ -109,17 +120,53 @@ export const create = mutation({
     department: v.string(),
     location: v.string(),
     type: v.union(v.literal("full-time"), v.literal("part-time"), v.literal("contract")),
-    urgency: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
     description: v.string(),
     requirements: v.array(v.string()),
+    urgency: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
     salaryMin: v.optional(v.number()),
     salaryMax: v.optional(v.number()),
+
+    // NEW:
+    isPublic: v.boolean(),
+    // Optional in schema? keep optional here too:
+    benefits: v.optional(v.array(v.string())),
+    // Optional override (otherwise auto-generated)
+    slug: v.optional(v.string()),
   },
+
   handler: async (ctx, args) => {
+    const postedDate = new Date().toISOString().split("T")[0];
+
+    const baseSlug = slugify(args.slug ?? args.title);
+    // Make slug unique by suffixing a short random chunk if needed
+    let slug = baseSlug;
+    const existing = await ctx.db
+      .query("jobs")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique();
+
+    if (existing) slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+
     const jobId = await ctx.db.insert("jobs", {
-      ...args,
-      postedDate: new Date().toISOString().split("T")[0],
-      status: "active",
+      title: args.title,
+      department: args.department,
+      location: args.location,
+      type: args.type,
+      description: args.description,
+      requirements: args.requirements,
+      urgency: args.urgency,
+      salaryMin: args.salaryMin,
+      salaryMax: args.salaryMax,
+
+      // NEW REQUIRED FIELDS:
+      slug,
+      isPublic: args.isPublic,
+
+      // optional
+      benefits: args.benefits,
+
+      postedDate,
+      status: "active", // must match schema union
     });
 
     return jobId;

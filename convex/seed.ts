@@ -1,5 +1,15 @@
 import { mutation } from './_generated/server'
 
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
 export const clearData = mutation({
   args: {},
   handler: async (ctx) => {
@@ -82,7 +92,16 @@ export const seedData = mutation({
       },
     ]
 
-    const jobIds = await Promise.all(jobs.map((job) => ctx.db.insert('jobs', job)))
+    const jobIds = await Promise.all(
+      jobs.map((job) =>
+        ctx.db.insert("jobs", {
+          ...job,
+          slug: (job as any).slug ?? slugify(job.title),
+          isPublic: (job as any).isPublic ?? true,
+          benefits: (job as any).benefits ?? [],
+        })
+      )
+    );
 
     // Seed candidates
     const candidates = [

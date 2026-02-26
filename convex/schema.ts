@@ -3,6 +3,7 @@ import { v } from 'convex/values'
 
 export default defineSchema({
   candidates: defineTable({
+    clerkUserId: v.optional(v.string()),
     name: v.string(),
     email: v.string(),
     phone: v.optional(v.string()),
@@ -37,23 +38,29 @@ export default defineSchema({
   })
     .index('by_email', ['email'])
     .index('by_status', ['status'])
-    .index('by_position', ['position']),
+    .index('by_position', ['position'])
+    .index('by_clerkUserId', ['clerkUserId']),
 
   jobs: defineTable({
     title: v.string(),
+    slug: v.string(),
     department: v.string(),
     location: v.string(),
     type: v.union(v.literal('full-time'), v.literal('part-time'), v.literal('contract')),
     description: v.string(),
     requirements: v.array(v.string()),
+    benefits: v.optional(v.array(v.string())),
     postedDate: v.string(),
     status: v.union(v.literal('active'), v.literal('paused'), v.literal('closed')),
     urgency: v.union(v.literal('high'), v.literal('medium'), v.literal('low')),
+    isPublic: v.boolean(),
     salaryMin: v.optional(v.number()),
     salaryMax: v.optional(v.number()),
   })
     .index('by_status', ['status'])
-    .index('by_department', ['department']),
+    .index('by_department', ['department'])
+    .index('by_slug', ['slug'])
+    .index('by_public', ['isPublic', 'status']),
 
   interviews: defineTable({
     candidateId: v.id('candidates'),
